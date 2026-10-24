@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Práctica de cambios de acordes</title>
+<style>
+:root{--bg:#f3f4f8;--fg:#14171f;--card:#fff;--bd:#c6cad6;--btn:#e5e7ee;--gold:#a87400;--green:#17874a;--on:#17874a;--onfg:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#10131a;--fg:#f0f1f5;--card:#1b1f28;--bd:#363b48;--btn:#252935;--gold:#f0b93a;--green:#5fcf80;--on:#5fcf80;--onfg:#07210f}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#10131a;--fg:#f0f1f5;--card:#1b1f28;--bd:#363b48;--btn:#252935;--gold:#f0b93a;--green:#5fcf80;--on:#5fcf80;--onfg:#07210f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px;text-align:center}
+h1{font-size:22px;margin:4px 0 14px}
+h2{font-size:15px;font-weight:600;margin:18px 0 8px;opacity:.75}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin:10px 0}
+.b{padding:11px 15px;border-radius:10px;border:1px solid var(--bd);background:var(--btn);color:var(--fg);font:600 16px inherit;font-family:inherit;cursor:pointer}
+.b.on{background:var(--on);color:var(--onfg);border-color:var(--on)}
+.b:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+select{width:100%;padding:12px;font-size:18px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+#home{max-width:260px}
+#away{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{gap:6px}.seg .b{min-width:34px;padding:10px 6px;font-size:20px}
+#bpmv{min-width:92px;font-size:20px;font-weight:700}
+input[type=range]{width:100%;max-width:300px;accent-color:var(--green)}
+label.chk{display:flex;gap:8px;align-items:center}
+#stage{--s:min(84vw,400px);display:flex;flex-direction:column;align-items:center;padding:14px 0;margin-top:8px}
+#stage:fullscreen{--s:min(84vw,66vh);justify-content:center;background:var(--bg)}
+#ring{position:relative;width:var(--s);height:var(--s);margin:18px 0}
+#ring::before{content:"";position:absolute;inset:8%;border:3px dashed var(--bd);border-radius:50%}
+.lb{position:absolute;transform:translate(-50%,-50%);font-weight:700;font-size:clamp(26px,calc(var(--s)*.1),46px);transition:color .15s}
+.lb.cur{color:var(--gold)}.lb.nxt{color:var(--green)}
+.hm{left:50%;top:50%;font-size:clamp(34px,calc(var(--s)*.15),66px)}
+#nd{position:absolute;left:50%;top:50%;width:0;height:0;transition:transform .3s ease-out}
+#nd svg{position:absolute;left:-15px;top:calc(var(--s)*-.27);fill:var(--gold);transition:transform .3s ease-out}
+#nd.in svg{transform:rotate(180deg)}
+#bt{font-size:20px;font-weight:600;min-height:28px}
+@media (prefers-reduced-motion:reduce){#nd,#nd svg,.lb{transition:none}}
+</style></head><body><main>
+<h1>Práctica de cambios de acordes</h1>
+<div class="row"><button class="b on" id="mmm">Mayor y menor</button><button class="b" id="mal">Todos los tipos</button></div>
+<h2>Acorde base</h2>
+<div class="row"><select id="home" aria-label="Acorde base"></select></div>
+<h2>Acordes de destino</h2>
+<div id="away"></div>
+<div class="row"><button class="b" id="rnd">Aleatorio</button><button class="b" id="shf">Mezclar</button><button class="b" id="clr">Borrar destinos</button></div>
+<div class="row"><label for="auto">Mezclar solos:</label><select id="auto" style="width:auto"><option value="0">Nunca</option><option value="4">Cada 4 cambios</option><option value="8">Cada 8 cambios</option><option value="16">Cada 16 cambios</option></select></div>
+<h2>Velocidad</h2>
+<div class="row"><button class="b" id="bm" aria-label="Bajar BPM">−</button><span id="bpmv"></span><button class="b" id="bp" aria-label="Subir BPM">+</button></div>
+<div class="row"><input type="range" id="bpm" min="30" max="200" aria-label="BPM"></div>
+<h2>Tiempos por acorde</h2>
+<div class="row seg" id="seg"></div>
+<div class="row"><label class="chk"><input type="checkbox" id="clk" checked> Sonido de metrónomo</label></div>
+<div class="row"><button class="b" id="go">Iniciar</button><button class="b" id="stp">Parar</button></div>
+<div id="stage"><div id="ring"><div id="nd"><svg width="30" height="46" viewBox="0 0 30 46"><polygon points="15,0 30,40 19,40 19,46 11,46 11,40 0,40"/></svg></div><div class="lb hm" id="hm"></div></div><div id="bt"></div></div>
+<div class="row"><button class="b on" id="fs">Pantalla completa</button></div>
+</main>
+<script>
+const $=id=>document.getElementById(id),R=['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'],
+Q={mm:['','m'],all:['','m','7','m7','maj7','sus2','sus4','dim','aug','5']};
+let mode='mm',beats=2,bpm=60,auto=0,run=false,step=0,beat=0,timer,nextT,ang=0,ac;
+const list=()=>R.flatMap(r=>Q[mode].map(q=>r+q)),H=$('hm'),ND=$('nd'),BT=$('bt'),HS=$('home'),sl=[],L=[];
+function fill(s){const v=s.value;s.innerHTML='<option value="">—</option>'+list().map(c=>`<option>${c}</option>`).join('');if(list().includes(v))s.value=v}
+for(let i=0;i<6;i++){const s=document.createElement('select');s.setAttribute('aria-label','Acorde de destino '+(i+1));s.onchange=()=>{save();paint()};$('away').appendChild(s);sl.push(s);
+const d=document.createElement('div'),a=(i*60)*Math.PI/180;d.style.left=(50+42*Math.sin(a))+'%';d.style.top=(50-42*Math.cos(a))+'%';d.className='lb';$('ring').appendChild(d);L.push(d)}
+for(let n=1;n<=8;n++){const b=document.createElement('button');b.className='b';b.textContent=n;b.onclick=()=>{beats=n;save();segs()};$('seg').appendChild(b)}
+const segs=()=>[...$('seg').children].forEach((b,i)=>b.classList.toggle('on',i+1===beats));
+function save(){try{localStorage.setItem('cambios',JSON.stringify({mode,beats,bpm,auto,home:HS.value,away:sl.map(s=>s.value)}))}catch(e){}}
+function refill(){[HS,...sl].forEach(fill);$('mmm').classList.toggle('on',mode==='mm');$('mal').classList.toggle('on',mode==='all');paint();save()}
+const slots=()=>sl.map((s,i)=>s.value?i:-1).filter(i=>i>=0);
+function who(k){const f=slots();return k%2===0?{h:true}:{h:false,i:f[((k-1)/2)%f.length]}}
+function paint(c,n){L.forEach((e,i)=>{e.textContent=sl[i].value;e.className='lb'+(c&&!c.h&&c.i===i?' cur':'')+(n&&!n.h&&n.i===i?' nxt':'')});
+H.textContent=HS.value;H.className='lb hm'+(c&&c.h?' cur':'')+(n&&n.h?' nxt':'')}
+function render(){const c=who(step),n=who(step+1);paint(c,n);const t=(c.h?n.i:c.i)*60;ang+=((t-ang)%360+540)%360-180;ND.style.transform=`rotate(${ang}deg)`;ND.classList.toggle('in',!c.h)}
+function shuffle(){const v=sl.map(s=>s.value);for(let i=v.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[v[i],v[j]]=[v[j],v[i]]}sl.forEach((s,i)=>s.value=v[i]);save()}
+function click(a){try{const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.frequency.value=a?1200:800;g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+.05);o.connect(g);g.connect(ac.destination);o.start();o.stop(t+.06)}catch(e){}}
+function loop(){if(!run)return;
+if(beat===0){if(auto&&step>0&&step%auto===0)shuffle();render()}
+if($('clk').checked)click(beat===0);
+BT.textContent=`Tiempo ${beat+1} de ${beats}`;
+if(++beat>=beats){beat=0;step++}
+nextT+=60000/bpm;timer=setTimeout(loop,Math.max(0,nextT-performance.now()))}
+function setBpm(v){bpm=Math.min(200,Math.max(30,v));$('bpm').value=bpm;$('bpmv').textContent=bpm+' BPM';save()}
+$('mmm').onclick=()=>{mode='mm';refill()};$('mal').onclick=()=>{mode='all';refill()};
+HS.onchange=()=>{save();paint()};
+$('rnd').onclick=()=>{const p=list().sort(()=>Math.random()-.5);HS.value=p[0];sl.forEach((s,i)=>s.value=p[i+1]);save();paint()};
+$('shf').onclick=()=>{shuffle();paint()};
+$('clr').onclick=()=>{sl.forEach(s=>s.value='');save();paint()};
+$('auto').onchange=e=>{auto=+e.target.value;save()};
+$('bm').onclick=()=>setBpm(bpm-5);$('bp').onclick=()=>setBpm(bpm+5);$('bpm').oninput=e=>setBpm(+e.target.value);
+$('go').onclick=()=>{if(run)return;if(!HS.value||!slots().length){BT.textContent='Elige un acorde base y al menos un destino.';return}
+try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
+run=true;step=0;beat=0;nextT=performance.now();loop()};
+$('stp').onclick=()=>{run=false;clearTimeout(timer);BT.textContent='';paint()};
+$('fs').onclick=()=>{const s=$('stage');try{document.fullscreenElement?document.exitFullscreen():s.requestFullscreen()}catch(e){}};
+let d={mode:'mm',beats:2,bpm:60,auto:0,home:'Am',away:['C','D','Dm','E','Em','A']};
+try{const x=JSON.parse(localStorage.getItem('cambios'));if(x&&x.away)d=x}catch(e){}
+mode=d.mode;beats=d.beats;auto=d.auto;refill();HS.value=d.home;sl.forEach((s,i)=>s.value=d.away[i]||'');$('auto').value=auto;setBpm(d.bpm);segs();paint();
+</script></body></html>
